@@ -5,7 +5,7 @@ resource "aws_kms_key" "mykey" {
 
 # terraform state file setup
 # create an S3 bucket to store the state file in
-resource "aws_s3_bucket" "terraform-state-storage-s3" {
+resource "aws_s3_bucket" "terraformStateStorageS3" {
   bucket = "ceb-terraform-remote-state-storage-s3"
   acl    = "private"
 

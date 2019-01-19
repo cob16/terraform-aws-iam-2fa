@@ -3,10 +3,6 @@ provider "aws" {
   version = "~> 1.56"
 }
 
-module "remote_state" {
-  source = "./remote_state"
-}
-
 # comment this out on first run
 terraform {
   backend "s3" {
@@ -16,4 +12,8 @@ terraform {
     region         = "eu-west-2"
     key            = ".terraform/terraform.tfstate"
   }
+}
+
+module "iam" {
+  source = "./iam"
 }
