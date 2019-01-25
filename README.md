@@ -1,4 +1,4 @@
-# Terraform-aws-iam-2fa
+# Terraform-aws-iam-2FA
 A set of group permissions that enforces 2FA and safety nets 
 
 ### Meta features
