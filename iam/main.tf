@@ -28,7 +28,7 @@ resource "aws_iam_group" "admin" {
 
 # conditions
 locals {
-  conditionIfMultiFactorAuthPresent = {
+  condition_if_multi_factor_auth_enabled = {
     test     = "Bool"
     variable = "aws:MultiFactorAuthPresent"
 
@@ -37,7 +37,7 @@ locals {
     ]
   }
 
-  conditionRestrictRegion = {
+  condition_restrict_region = {
     test     = "StringEquals"
     variable = "aws:RequestedRegion"
 
@@ -52,11 +52,9 @@ data "aws_caller_identity" "current" {}
 
 # developer policys
 
-data "aws_iam_policy_document" "AllowIndividualUserToManageTheirOwnMFA" {
+data "aws_iam_policy_document" "manage_personal_mfa" {
   # based off https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_mfa_configure-api-require.html#MFAProtectedAPI-user-mfa
   statement {
-    sid = "AllowIndividualUserToListOnlyTheirOwnMFA"
-
     actions = [
       "iam:ListMFADevices",
     ]
@@ -68,8 +66,6 @@ data "aws_iam_policy_document" "AllowIndividualUserToManageTheirOwnMFA" {
   }
 
   statement {
-    sid = "AllowIndividualUserToManageTheirOwnMFA"
-
     actions = [
       "iam:CreateVirtualMFADevice",
       "iam:DeleteVirtualMFADevice",
@@ -84,8 +80,6 @@ data "aws_iam_policy_document" "AllowIndividualUserToManageTheirOwnMFA" {
   }
 
   statement {
-    sid = "AllowIndividualUserToDeactivateOnlyTheirOwnMFAOnlyWhenUsingMFA"
-
     actions = [
       "iam:DeactivateMFADevice",
     ]
@@ -96,18 +90,18 @@ data "aws_iam_policy_document" "AllowIndividualUserToManageTheirOwnMFA" {
     ]
 
     condition = [
-      "${local.conditionIfMultiFactorAuthPresent}",
+      "${local.condition_if_multi_factor_auth_enabled}",
     ]
   }
 }
 
-resource "aws_iam_policy" "AllowIndividualUserToManageTheirOwnMFA" {
-  name   = "AllowIndividualUserToManageTheirOwnMFA"
+resource "aws_iam_policy" "manage_personal_mfa" {
+  name   = "manage_personal_mfa"
   path   = "/"
-  policy = "${data.aws_iam_policy_document.AllowIndividualUserToManageTheirOwnMFA.json}"
+  policy = "${data.aws_iam_policy_document.manage_personal_mfa.json}"
 }
 
-data "aws_iam_policy_document" "AllowIndividualUserToManageTheirOwnKeys" {
+data "aws_iam_policy_document" "developers_manage_personal_keys" {
   statement {
     sid = "ManageSSHKeys"
 
@@ -123,15 +117,15 @@ data "aws_iam_policy_document" "AllowIndividualUserToManageTheirOwnKeys" {
   }
 }
 
-resource "aws_iam_policy" "AllowIndividualUserToManageTheirOwnKeys" {
-  name   = "AllowIndividualUserToManageTheirOwnKeys"
+resource "aws_iam_policy" "developers_manage_personal_keys" {
+  name   = "developers_manage_personal_keys"
   path   = "/"
-  policy = "${data.aws_iam_policy_document.AllowIndividualUserToManageTheirOwnKeys.json}"
+  policy = "${data.aws_iam_policy_document.developers_manage_personal_keys.json}"
 }
 
-data "aws_iam_policy_document" "AllowS3IfMfa" {
+data "aws_iam_policy_document" "allow_S3_mfa" {
   statement {
-    sid = "AllowS3IfMFA"
+    sid = "allowS3Mfa"
 
     actions = [
       "s3:*",
@@ -142,7 +136,7 @@ data "aws_iam_policy_document" "AllowS3IfMfa" {
     ]
 
     condition = [
-      "${local.conditionIfMultiFactorAuthPresent}",
+      "${local.condition_if_multi_factor_auth_enabled}",
     ]
   }
 
@@ -185,13 +179,13 @@ data "aws_iam_policy_document" "AllowS3IfMfa" {
   }
 }
 
-resource "aws_iam_policy" "AllowS3IfMfa" {
-  name   = "AllowS3IfMfa"
+resource "aws_iam_policy" "allow_S3_mfa" {
+  name   = "allow_S3_mfa"
   path   = "/"
-  policy = "${data.aws_iam_policy_document.AllowS3IfMfa.json}"
+  policy = "${data.aws_iam_policy_document.allow_S3_mfa.json}"
 }
 
-data "aws_iam_policy_document" "AllowEC2IfMfa" {
+data "aws_iam_policy_document" "allow_ec2_if_mfa_enabled" {
   statement {
     sid = "AllowEC2General"
 
@@ -207,8 +201,8 @@ data "aws_iam_policy_document" "AllowEC2IfMfa" {
     ]
 
     condition = [
-      "${local.conditionIfMultiFactorAuthPresent}",
-      "${local.conditionRestrictRegion}",
+      "${local.condition_if_multi_factor_auth_enabled}",
+      "${local.condition_restrict_region}",
     ]
   }
 
@@ -224,8 +218,8 @@ data "aws_iam_policy_document" "AllowEC2IfMfa" {
     ]
 
     condition = [
-      "${local.conditionIfMultiFactorAuthPresent}",
-      "${local.conditionRestrictRegion}",
+      "${local.condition_if_multi_factor_auth_enabled}",
+      "${local.condition_restrict_region}",
       {
         test     = "StringEquals"
         variable = "iam:AWSServiceName"
@@ -243,15 +237,15 @@ data "aws_iam_policy_document" "AllowEC2IfMfa" {
   }
 }
 
-resource "aws_iam_policy" "AllowEC2IfMfa" {
-  name   = "AllowEC2IfMfa"
+resource "aws_iam_policy" "allow_ec2_if_mfa_enabled" {
+  name   = "allow_ec2_if_mfa_enabled"
   path   = "/"
-  policy = "${data.aws_iam_policy_document.AllowEC2IfMfa.json}"
+  policy = "${data.aws_iam_policy_document.allow_ec2_if_mfa_enabled.json}"
 }
 
 # admin policys
 
-data "aws_iam_policy_document" "AllowAdminIfMFA" {
+data "aws_iam_policy_document" "allow_admin_if_mfa" {
   statement {
     sid = "RequireAdminMFA"
 
@@ -264,21 +258,19 @@ data "aws_iam_policy_document" "AllowAdminIfMFA" {
     ]
 
     condition = [
-      "${local.conditionIfMultiFactorAuthPresent}",
+      "${local.condition_if_multi_factor_auth_enabled}",
     ]
   }
 }
 
-resource "aws_iam_policy" "AllowAdminIfMFA" {
-  name   = "AllowAdminIfMFA"
+resource "aws_iam_policy" "allow_admin_if_mfa" {
+  name   = "allow_admin_if_mfa"
   path   = "/"
-  policy = "${data.aws_iam_policy_document.AllowAdminIfMFA.json}"
+  policy = "${data.aws_iam_policy_document.allow_admin_if_mfa.json}"
 }
 
-data "aws_iam_policy_document" "AssumeRoleToAdmin" {
+data "aws_iam_policy_document" "assume_role_to_admin" {
   statement {
-    sid = "AssumeRoleToAdmin"
-
     actions = [
       "sts:AssumeRole",
     ]
@@ -288,19 +280,19 @@ data "aws_iam_policy_document" "AssumeRoleToAdmin" {
     ]
 
     condition = [
-      "${local.conditionIfMultiFactorAuthPresent}",
+      "${local.condition_if_multi_factor_auth_enabled}",
     ]
   }
 }
 
-resource "aws_iam_policy" "AssumeRoleToAdmin" {
-  name   = "AssumeRoleToAdmin"
+resource "aws_iam_policy" "assume_role_to_admin" {
+  name   = "assume_role_to_admin"
   path   = "/"
-  policy = "${data.aws_iam_policy_document.AssumeRoleToAdmin.json}"
+  policy = "${data.aws_iam_policy_document.assume_role_to_admin.json}"
 }
 
 # admin assume role
-data "aws_iam_policy_document" "adminAssumeRolePolicy" {
+data "aws_iam_policy_document" "admin_assume_role_policy" {
   statement {
     actions = ["sts:AssumeRole"]
 
@@ -311,19 +303,19 @@ data "aws_iam_policy_document" "adminAssumeRolePolicy" {
   }
 }
 
-resource "aws_iam_role" "adminAssumeRole" {
+resource "aws_iam_role" "admin_assume_role" {
   name               = "admin"
-  assume_role_policy = "${data.aws_iam_policy_document.adminAssumeRolePolicy.json}"
+  assume_role_policy = "${data.aws_iam_policy_document.admin_assume_role_policy.json}"
 }
 
-resource "aws_iam_policy_attachment" "adminAssumeRolePolicy" {
-  name       = "adminAssumeRolePolicy"
-  roles      = ["${aws_iam_role.adminAssumeRole.name}"]
-  policy_arn = "${aws_iam_policy.AllowAdminIfMFA.arn}"
+resource "aws_iam_policy_attachment" "admin_assume_role_policy" {
+  name       = "admin_assume_role_policy"
+  roles      = ["${aws_iam_role.admin_assume_role.name}"]
+  policy_arn = "${aws_iam_policy.allow_admin_if_mfa.arn}"
 }
 
 # developer group policy-attachments
-resource "aws_iam_group_policy_attachment" "DevelopersIAMReadOnlyAccess" {
+resource "aws_iam_group_policy_attachment" "developers_iam_read_only_access" {
   group      = "${aws_iam_group.developer.name}"
   policy_arn = "arn:aws:iam::aws:policy/IAMReadOnlyAccess"
 }
@@ -334,39 +326,39 @@ resource "aws_iam_group_policy_attachment" "DevelopersIAMReadOnlyAccess" {
 #   policy_arn = "arn:aws:iam::aws:policy/IAMSelfManageServiceSpecificCredentials"
 # }
 
-resource "aws_iam_group_policy_attachment" "DevelopersIAMUserChangePassword" {
+resource "aws_iam_group_policy_attachment" "developers_iam_User_change_password" {
   group      = "${aws_iam_group.developer.name}"
   policy_arn = "arn:aws:iam::aws:policy/IAMUserChangePassword"
 }
 
-resource "aws_iam_group_policy_attachment" "DevelopersIAMUserSSHKeys" {
+resource "aws_iam_group_policy_attachment" "developers_iam_user_ssh_keys" {
   group      = "${aws_iam_group.developer.name}"
   policy_arn = "arn:aws:iam::aws:policy/IAMUserSSHKeys"
 }
 
-resource "aws_iam_group_policy_attachment" "AllowIndividualUserToManageTheirOwnKeys" {
+resource "aws_iam_group_policy_attachment" "developers_manage_personal_keys" {
   group      = "${aws_iam_group.developer.name}"
-  policy_arn = "${aws_iam_policy.AllowIndividualUserToManageTheirOwnKeys.arn}"
+  policy_arn = "${aws_iam_policy.developers_manage_personal_keys.arn}"
 }
 
-resource "aws_iam_group_policy_attachment" "DevelopersAllowIndividualUserToManageTheirOwnMFA" {
+resource "aws_iam_group_policy_attachment" "developers_manage_personal_mfa" {
   group      = "${aws_iam_group.developer.name}"
-  policy_arn = "${aws_iam_policy.AllowIndividualUserToManageTheirOwnMFA.arn}"
+  policy_arn = "${aws_iam_policy.manage_personal_mfa.arn}"
 }
 
-resource "aws_iam_group_policy_attachment" "DevelopersAllowS3IfMfa" {
+resource "aws_iam_group_policy_attachment" "developers_allow_s3_mfa" {
   group      = "${aws_iam_group.developer.name}"
-  policy_arn = "${aws_iam_policy.AllowS3IfMfa.arn}"
+  policy_arn = "${aws_iam_policy.allow_S3_mfa.arn}"
 }
 
-resource "aws_iam_group_policy_attachment" "DevelopersAllowEC2IfMfa" {
+resource "aws_iam_group_policy_attachment" "developers_allow_ec2_if_mfa_enabled" {
   group      = "${aws_iam_group.developer.name}"
-  policy_arn = "${aws_iam_policy.AllowEC2IfMfa.arn}"
+  policy_arn = "${aws_iam_policy.allow_ec2_if_mfa_enabled.arn}"
 }
 
 # admin group policy-attachments
 
-resource "aws_iam_group_policy_attachment" "AssumeRoleToAdmin" {
+resource "aws_iam_group_policy_attachment" "assume_role_to_admin" {
   group      = "${aws_iam_group.admin.name}"
-  policy_arn = "${aws_iam_policy.AssumeRoleToAdmin.arn}"
+  policy_arn = "${aws_iam_policy.assume_role_to_admin.arn}"
 }
