@@ -16,14 +16,17 @@ resource "aws_s3_account_public_access_block" "secure_s3_public_acls" {
   ignore_public_acls      = true
 }
 
-# groups
+variable "group_name_prefix" {
+  type = string
+}
 
+# groups
 resource "aws_iam_group" "developer" {
-  name = "developer"
+  name = "${var.group_name_prefix}_developer"
 }
 
 resource "aws_iam_group" "admin" {
-  name = "admin"
+  name =  "${var.group_name_prefix}_admin"
 }
 
 # conditions
